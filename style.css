@@ -484,6 +484,12 @@ body {
     pointer-events: none;
 }
 
+@media (max-width: 768px) {
+    .bg-decoration {
+        overflow: hidden;  /* Solo hidden en móvil */
+    }
+}
+
 .circle {
     position: absolute;
     border-radius: 50%;
