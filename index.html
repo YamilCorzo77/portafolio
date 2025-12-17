@@ -375,7 +375,7 @@
                 </div>
 
                 <div class="contact-form-wrapper">
-                    <form class="contact-form" id="contactForm">
+                    <form class="contact-form" id="contactForm" action="https://formspree.io/f/mblnnggy" method="POST">
                         <div class="form-group">
                             <label for="name">Nombre</label>
                             <input type="text" id="name" name="name" required placeholder="Tu nombre">
@@ -468,25 +468,102 @@
     <!-- JavaScript para el formulario de contacto -->
     <script>
         // Manejo del formulario de contacto
-        document.getElementById('contactForm').addEventListener('submit', function(e) {
+        document.getElementById('contactForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const name = document.getElementById('name').value;
-            const email = document.getElementById('email').value;
-            const subject = document.getElementById('subject').value;
-            const message = document.getElementById('message').value;
+            const submitButton = this.querySelector('button[type="submit"]');
+            const originalButtonHTML = submitButton.innerHTML;
             
-            // Construir el enlace mailto con los datos del formulario
-            const mailtoLink = `mailto:yamilluis393@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(
-                `Nombre: ${name}\nEmail: ${email}\n\nMensaje:\n${message}`
-            )}`;
+            // Deshabilitar botón y mostrar loading
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<div class="spinner"></div> Enviando...';
             
-            // Abrir el cliente de correo
-            window.location.href = mailtoLink;
-            
-            // Opcional: Limpiar el formulario después de enviar
-            this.reset();
+            try {
+                const formData = new FormData(this);
+                
+                const response = await fetch(this.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    // Mostrar notificación de éxito
+                    showNotification('success', '¡Mensaje enviado!', 'Gracias por contactarme. Te responderé pronto.');
+                    
+                    // Limpiar formulario
+                    this.reset();
+                } else {
+                    // Error en el envío
+                    showNotification('error', 'Error al enviar', 'Hubo un problema al enviar tu mensaje. Por favor, intenta de nuevo.');
+                }
+            } catch (error) {
+                // Error de red
+                showNotification('error', 'Error de conexión', 'Verifica tu conexión a internet e intenta nuevamente.');
+            } finally {
+                // Restaurar botón
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalButtonHTML;
+            }
         });
+
+        // Sistema de notificaciones
+        function showNotification(type, title, message, duration = 5000) {
+            // Crear elemento de notificación
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            
+            // Iconos según el tipo
+            const icons = {
+                success: '✓',
+                error: '✕',
+                info: 'ℹ'
+            };
+            
+            notification.innerHTML = `
+                <div class="notification-icon">${icons[type]}</div>
+                <div class="notification-content">
+                    <div class="notification-title">${title}</div>
+                    <div class="notification-message">${message}</div>
+                </div>
+                <button class="notification-close" aria-label="Cerrar">×</button>
+                <div class="notification-progress" style="width: 100%"></div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Animar entrada
+            setTimeout(() => notification.classList.add('show'), 10);
+            
+            // Barra de progreso
+            const progress = notification.querySelector('.notification-progress');
+            let width = 100;
+            const interval = setInterval(() => {
+                width -= 100 / (duration / 100);
+                progress.style.width = width + '%';
+                if (width <= 0) clearInterval(interval);
+            }, 100);
+            
+            // Cerrar al hacer clic en X
+            const closeBtn = notification.querySelector('.notification-close');
+            closeBtn.addEventListener('click', () => {
+                clearInterval(interval);
+                hideNotification(notification);
+            });
+            
+            // Auto cerrar después del duration
+            setTimeout(() => {
+                hideNotification(notification);
+            }, duration);
+        }
+
+        function hideNotification(notification) {
+            notification.classList.remove('show');
+            notification.classList.add('hide');
+            setTimeout(() => notification.remove(), 400);
+        }
 
         // Manejo del menú móvil
         const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
